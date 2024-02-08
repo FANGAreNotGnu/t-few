@@ -2,7 +2,7 @@ import os
 import torch
 import argparse
 from datetime import datetime
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
 
@@ -15,9 +15,14 @@ from src.utils.util import ParseKwargs, set_seeds
 
 def get_transformer(config):
     tokenizer = AutoTokenizer.from_pretrained(config.origin_model)
-    model = AutoModelForSeq2SeqLM.from_pretrained(config.origin_model, low_cpu_mem_usage=True)
+    #model = AutoModelForSeq2SeqLM.from_pretrained(config.origin_model, low_cpu_mem_usage=True)
+    model = AutoModelForCausalLM.from_pretrained(config.origin_model, low_cpu_mem_usage=True)
 
     tokenizer.model_max_length = config.max_seq_len
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token  # no pad token for mistral 7b
+        tokenizer.pad_token_id = tokenizer.eos_token_id  # no pad token for mistral 7b
+        
     model = modify_transformer(model, config)
     return tokenizer, model
 
